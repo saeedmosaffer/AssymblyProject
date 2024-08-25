@@ -1,198 +1,223 @@
-.model small
-.stack 100h
+org 100h
+
 .data
-    prompt db 'Please enter a number between 0 and 999: $'
-    bin_msg db 0DH, 0AH, 'The number in binary format is: $'
-    hex_msg db 0DH, 0AH, 'The number in hexadecimal format is: $'
-    rom_msg db 0DH, 0AH, 'The number in Roman format is: $'
-    
-    binary_result db 16 dup('$')
-    hex_result db 4 dup('$')
-    roman_result db 20 dup('$')
+ first_string db 0ah,0dh, 'Please enter a number between 0 and 999:  $'  ; Prompt to enter a number
+ number DB 4
+        db ?
+        db 3 dup(?)  ; Stores the user input (number of digits)
+ error_message db 0ah,0dh, 'Invalid input! Please enter digits only.$' ; Error message for invalid input
+ binarysoso db 0ah,0dh, 'THE VALUE IN BINARY FORMAT IS: $'  ; Binary output label
+ HEXSTR DB 0ah,0dh, 'THE NUMBER IN HEXADECIMAL FORMAT IS : ','$' ; Hexadecimal output label
+ ROMANSTR DB 0AH,0DH,'THE NUMBER IN ROMAN SYSTEM IS : $' ; Roman numeral output label
+ digits db 0  ; Store digits of the number
+ mytemp db 4 dup(' '), '$'  ; Temporary storage for hexadecimal result
+ binarytemp db 16 dup('0'), '$'  ; Temporary storage for binary result
+ ROMANVALUES DW 'CM', 900, 'D', 500, 'CD', 400, 'C', 100, 'XC', 90, 'L', 50, 'XL', 40, 'X', 10, 'IX', 9, 'V', 5, 'IV', 4, 'I', 1, 0 ; Roman numeral values and their corresponding numbers
+ ROMANVALUE DW 20 DUP(?), '$'  ; Temporary storage for Roman numeral result
 
 .code
+mov ax,@data
+mov ds,ax
+
 main proc
-    ; Initialize data segment
-    mov ax, @data
-    mov ds, ax
+ call Print_First_String  ; Prompt user for input
+ call read_from_user  ; Read and convert user input to CX register
+ mov bx, cx  ; Save CX for reuse
+ call convert_to_hex  ; Convert the input to hexadecimal
+ call printHexa  ; Print the hexadecimal result
+ mov cx, bx  ; Restore CX for binary conversion
+ call convertbinary  ; Convert the input to binary
+ call CONVERTTOROMAN  ; Convert the input to Roman numeral
+endp main
+RET
 
-    ; Display prompt and get user input
-    lea dx, prompt
-    mov ah, 09h
-    int 21h
+; Prints the first string (prompt for user input)
+Print_First_String proc
+ mov dx,offset first_string
+ mov ah,09h
+ int 21h
+ ret
+Print_First_String endp
 
-    ; Read number from user
-    xor bx, bx           ; Clear BX to store the final number
-    mov ah, 01h
-    int 21h
-    sub al, '0'          ; Convert ASCII to number
-    mov bl, al           ; Store it in BL
+; Reads user input and converts it to numeric value in CX
+read_from_user proc
+ mov ah,0ah
+ mov dx,offset number
+ int 21h     
+ mov si,dx
+ cmp [si+1], 2
+ je convertTwoVariable
+ cmp [si+1], 3
+ je convertThreeVariable   
+ cmp [si+1], 1
+ je convertOneVariable
+ jmp fi
+ 
+; Convert a single-digit number to its value in CX
+convertOneVariable:
+ XOR CX,CX
+ mov cx,[si+2]
+ SUB CX,30H  ; Convert ASCII to digit
+ XOR CH,CH
+ JMP FI
 
-read_next_digit:
-    mov ah, 01h
-    int 21h
-    cmp al, 13           ; Check for Enter key (ASCII 13)
-    je convert           ; If Enter, jump to convert
+; Convert a two-digit number to its value in CX
+convertTwoVariable:
+ mov si,dx    
+ xor bx,bx
+ mov al,10  
+ mov bl,[si+2]
+ sub bl,30h
+ mul bl  ; Multiply the first digit by 10
+ mov cx,ax
+ mov bl,[si+3]
+ sub bl,30h
+ add cx,bx  ; Add the second digit
+ jmp fi
 
-    sub al, '0'
-    mov ah, bl
-    mov bl, 10
-    mul bl
-    add bl, al           ; Combine digits
-    jmp read_next_digit
+; Convert a three-digit number to its value in CX
+convertThreeVariable:
+ mov si,dx
+ xor bx,bx
+ mov bl,[si+2] 
+ sub bl,30h
+ mov al,10
+ mul bl  ; Multiply the first digit by 100
+ mov cx,ax
+ mov al,10
+ mov bl,[si+3] 
+ sub bl,30h
+ add cx,bx  ; Add the second digit
+ mul cl
+ mov cx,ax
+ mov bl,[si+4]
+ sub bl,30h
+ add cx,bx  ; Add the third digit
+fi:
+ RET
+read_from_user endp  
 
-convert:
-    ; Copy the final value in BX to AX for conversion
-    mov ax, bx
-
-    ; Convert to binary
-    call convert_to_binary
-
-    ; Convert to hexadecimal
-    mov ax, bx
-    call convert_to_hex
-
-    ; Convert to Roman numeral
-    mov ax, bx
-    call convert_to_roman
-
-    ; Display binary result
-    lea dx, bin_msg
-    mov ah, 09h
-    int 21h
-    lea dx, binary_result
-    mov ah, 09h
-    int 21h
-
-    ; Display hexadecimal result
-    lea dx, hex_msg
-    mov ah, 09h
-    int 21h
-    lea dx, hex_result
-    mov ah, 09h
-    int 21h
-
-    ; Display Roman numeral result
-    lea dx, rom_msg
-    mov ah, 09h
-    int 21h
-    lea dx, roman_result
-    mov ah, 09h
-    int 21h
-
-    ; Exit the program
-    mov ah, 4Ch
-    int 21h
-
-main endp
-
-convert_to_binary proc
-    ; Convert number in AX to binary string
-    lea di, binary_result + 15   ; Point to the end of the result buffer
-    mov cx, 16                   ; 16 bits to process
-    mov bx, 1                    ; Start with the lowest bit
-
-bin_loop:
-    mov dx, ax
-    and dx, bx                   ; Isolate the bit
-    shr dx, cl                   ; Shift it to the least significant bit
-    add dl, '0'                  ; Convert to ASCII '0' or '1'
-    mov [di], dl
-    dec di                       ; Move to the next position
-    shr bx, 1                    ; Shift mask to the right
-    loop bin_loop
-
-    ret
-convert_to_binary endp
-
+; Converts the value in CX to hexadecimal and stores it in 'mytemp'
 convert_to_hex proc
-    ; Convert number in AX to hexadecimal string
-    lea di, hex_result + 3       ; Point to the end of the result buffer
-    mov cx, 4                    ; 4 hexadecimal digits to process
+ mov di, offset mytemp + 3  
+ xor al,al                  
 
-hex_loop:
-    mov dx, ax
-    and dx, 0Fh                  ; Isolate the lowest 4 bits
-    cmp dl, 09h
-    jbe hex_digit
-    add dl, 07h                  ; Adjust for A-F
+convert_loop:
+ mov ax, cx  ; Copy CX to AX
+ and ax, 0Fh  ; Isolate the lower 4 bits
+ add al, 30h  ; Convert to ASCII
+ cmp al, 39h                 
+ jbe store_hex  ; If it's a digit, store it
+ add al, 7  ; Otherwise, adjust for hex letters
 
-hex_digit:
-    add dl, '0'                  ; Convert to ASCII
-    mov [di], dl
-    shr ax, 4                    ; Shift AX to process the next digit
-    dec di
-    loop hex_loop
+store_hex:
+ mov [di], al  ; Store the digit/letter
+ dec di  ; Move pointer left
+ shr cx, 4  ; Shift the input right by 4 bits (next hex digit)
+ jnz convert_loop  ; Repeat until CX is 0
 
-    ret
+; Remove leading zeros from 'mytemp'
+remove_leading_zeros: 
+ cmp byte ptr [di], '0'  
+ jne finish_conversion
+ mov al, ' '
+ mov [di], al
+ inc di
+ cmp di, offset mytemp + 3
+ jle remove_leading_zeros
+
+finish_conversion:
+ ret
 convert_to_hex endp
 
-convert_to_roman proc
-    ; Convert number in AX to Roman numeral string
-    lea di, roman_result         ; Load destination offset for Roman numeral result
-    mov cx, 100                  ; Start with the highest value (100 for 'C')
-    call roman_digit             ; Convert hundreds
+; Prints the hexadecimal result
+printHexa proc
+ mov dx, OFFSET HEXSTR   
+ mov ah, 09h
+ int 21h
 
-    mov cx, 50                   ; Now handle 'L' (50)
-    call roman_digit
+ mov dx, offset mytemp   
+ mov ah, 09h
+ int 21h
 
-    mov cx, 10                   ; Handle tens ('X')
-    call roman_digit
+ ret
+printHexa endp
 
-    mov cx, 5                    ; Handle fives ('V')
-    call roman_digit
+; Converts the value in CX to binary and stores it in 'binarytemp'
+convertbinary proc
+ xor si,si
+ xor ax,ax   
+ mov si,offset binarytemp 
+ mov si,offset binarytemp + 15
+ mov bx,cx    
 
-    mov cx, 1                    ; Finally, handle units ('I')
-    call roman_digit
+doLoop:
+ cmp cx ,0
+ je outt
 
-    ret                          ; Return from the subroutine
-convert_to_roman endp
+ shr cx,1  ; Shift right to get the next bit
+ jc put1  ; If the bit is 1, store '1'
+ jmp put0  ; Otherwise, store '0'
 
-roman_digit proc
-    ; Convert digit to Roman numeral
-    mov dx, ax                   ; Copy AX to DX for division
-    div cx                       ; Divide AX by CX (CX holds the Roman numeral value)
-    mov ax, dx                   ; Restore the remainder to AX (for the next iteration)
+put1:
+ mov al,'1'
+ mov [si],al 
+ dec si
+ jmp doLoop
 
-    cmp al, 4                    ; Special case: Check for 4
-    je four_case
-    cmp al, 9                    ; Special case: Check for 9
-    je nine_case
-    cmp al, 5                    ; Check if 5 or more (to handle 'V', 'L', etc.)
-    jae five_case
+put0:  
+ mov al,'0'
+ mov [si],al 
+ dec si
+ jmp doLoop 
 
-one_case:
-    ; Handle cases for 1, 2, 3
-    cmp al, 0                    ; If 0, skip
-    je end_digit
-    mov byte ptr [di], 'I'       ; Add 'I' to the result
-    inc di                       ; Move to the next position in the result
-    dec al                       ; Decrease the counter
-    jmp one_case                 ; Repeat for remaining count
+outt:
+ mov dx, OFFSET binarysoso   
+ mov ah, 09h
+ int 21h
 
-four_case:
-    ; Handle case for 4 (like 'IV')
-    mov byte ptr [di], 'I'
-    mov byte ptr [di+1], 'V'
-    add di, 2
-    ret
+ mov dx, offset binarytemp   
+ mov ah, 09h
+ int 21h 
+ ret
+convertbinary endp  
 
-five_case:
-    ; Handle cases for 5 or more
-    mov byte ptr [di], 'V'
-    add di, 1
-    sub al, 5
-    jmp one_case
+; Converts the value in BX to Roman numeral and stores it in 'ROMANVALUE'
+CONVERTTOROMAN PROC
+ mov si,offset ROMANVALUES
+ mov di, offset ROMANVALUE
 
-nine_case:
-    ; Handle case for 9 (like 'IX')
-    mov byte ptr [di], 'I'
-    mov byte ptr [di+1], 'X'
-    add di, 2
-    ret
+LOOPTOFINDCURRVALUE:
+ cmp bx,0
+ je BY  ; Exit if BX is 0
+ mov dl,[si+2]
+ mov dh,[si+3]
+ cmp bx,dx  ; Compare BX with the Roman value
+ jl RETERN  ; Skip if BX is smaller
+ sub bx,dx  ; Subtract the value
+ mov cl,[si]
+ mov ch,[si+1]
+ mov [di],cx  ; Store the Roman numeral
+ inc di
+ inc di
+ jmp LOOPTOFINDCURRVALUE  ; Repeat
 
-end_digit:
-    ret
-roman_digit endp
+RETERN:
+ inc si
+ inc si
+ inc si 
+ inc si
+ jmp LOOPTOFINDCURRVALUE
+
+BY: 
+ mov dx,OFFSET ROMANSTR
+ mov ah,9
+ int 21h
+           
+ mov dx,OFFSET ROMANVALUE
+ mov ah,9
+ int 21h  
+ ret
+CONVERTTOROMAN ENDP
 
 end main
