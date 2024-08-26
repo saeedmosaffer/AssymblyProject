@@ -2,13 +2,12 @@ org 100h
 
 .data
  first_string db 0ah,0dh, 'Please enter a number between 0 and 999:  $'  ; Prompt to enter a number
- number DB 4
+ number db 4
         db ?
         db 3 dup(?)  ; Stores the user input (number of digits)
- error_message db 0ah,0dh, 'Invalid input! Please enter digits only.$' ; Error message for invalid input
- binarysoso db 0ah,0dh, 'THE VALUE IN BINARY FORMAT IS: $'  ; Binary output label
- HEXSTR DB 0ah,0dh, 'THE NUMBER IN HEXADECIMAL FORMAT IS : ','$' ; Hexadecimal output label
- ROMANSTR DB 0AH,0DH,'THE NUMBER IN ROMAN SYSTEM IS : $' ; Roman numeral output label
+ binary db 0ah,0dh, 'THE VALUE IN BINARY FORMAT IS: $'  ; Binary output label
+ HEXS DB 0ah,0dh, 'THE NUMBER IN HEXADECIMAL FORMAT IS : ','$' ; Hexadecimal output label
+ ROMANS DB 0AH,0DH,'THE NUMBER IN ROMAN SYSTEM IS : $' ; Roman numeral output label
  digits db 0  ; Store digits of the number
  mytemp db 4 dup(' '), '$'  ; Temporary storage for hexadecimal result
  binarytemp db 16 dup('0'), '$'  ; Temporary storage for binary result
@@ -77,24 +76,33 @@ convertTwoVariable:
 
 ; Convert a three-digit number to its value in CX
 convertThreeVariable:
- mov si,dx
- xor bx,bx
- mov bl,[si+2] 
- sub bl,30h
- mov al,10
- mul bl  ; Multiply the first digit by 100
- mov cx,ax
- mov al,10
- mov bl,[si+3] 
- sub bl,30h
- add cx,bx  ; Add the second digit
- mul cl
- mov cx,ax
- mov bl,[si+4]
- sub bl,30h
- add cx,bx  ; Add the third digit
-fi:
- RET
+    mov si,dx             ; Load the address of the input buffer into SI.
+    xor bx,bx             ; Clear BX register for calculation.
+    
+    mov bl,[si+2]         ; Load the first digit (hundreds place) into BL.
+    sub bl,30h            ; Convert the ASCII digit to a numeric value.
+    
+    mov al,10             ; Load 10 into AL for multiplying.
+    mul bl                ; Multiply the first digit by 10 to shift it.
+    
+    mov cx,ax             ; Move the tens-hundreds value to CX.
+    
+    mov al,10             ; Load 10 into AL again for further multiplication.
+    mov bl,[si+3]         ; Load the second digit (tens place) into BL.
+    sub bl,30h            ; Convert the ASCII digit to a numeric value.
+    
+    add cx,bx             ; Add the tens place value to CX.
+    
+    mul cl                ; Multiply the result by 10 to move it into its final place.
+    
+    mov cx,ax             ; Store the value in CX.
+    
+    mov bl,[si+4]         ; Load the third digit (units place) into BL.
+    sub bl,30h            ; Convert it to a numeric value.
+    
+    add cx,bx             ; Add the final value to CX.
+  fi: 
+ RET 
 read_from_user endp  
 
 ; Converts the value in CX to hexadecimal and stores it in 'mytemp'
@@ -132,7 +140,7 @@ convert_to_hex endp
 
 ; Prints the hexadecimal result
 printHexa proc
- mov dx, OFFSET HEXSTR   
+ mov dx, OFFSET HEXS  
  mov ah, 09h
  int 21h
 
@@ -172,7 +180,7 @@ put0:
  jmp doLoop 
 
 outt:
- mov dx, OFFSET binarysoso   
+ mov dx, OFFSET binary   
  mov ah, 09h
  int 21h
 
@@ -210,7 +218,7 @@ RETERN:
  jmp LOOPTOFINDCURRVALUE
 
 BY: 
- mov dx,OFFSET ROMANSTR
+ mov dx,OFFSET ROMANS
  mov ah,9
  int 21h
            
