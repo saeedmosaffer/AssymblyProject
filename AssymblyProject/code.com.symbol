@@ -1,0 +1,41 @@
+< THE SYMBOL TABLE >  code.com  --  emu8086 assembler version: 4.08 
+===================================================================================================
+Name                     	Offset    	Size      	Type      	Segment   
+===================================================================================================
+FIRST_STRING             	00103     	1         	VAR       	(NOSEG)   
+NUMBER                   	00130     	1         	VAR       	(NOSEG)   
+BINARY                   	00135     	1         	VAR       	(NOSEG)   
+HEXS                     	00157     	1         	VAR       	(NOSEG)   
+ROMANS                   	0017F     	1         	VAR       	(NOSEG)   
+DIGITS                   	001A1     	1         	VAR       	(NOSEG)   
+MYTEMP                   	001A2     	1         	VAR       	(NOSEG)   
+BINARYTEMP               	001A7     	1         	VAR       	(NOSEG)   
+ROMANVALUES              	001B8     	2         	VAR       	(NOSEG)   
+ROMANVALUE               	001EA     	2         	VAR       	(NOSEG)   
+CODE                     	00214     	-1        	LABEL     	(NOSEG)   
+MAIN                     	00218     	-1        	NEAR      	(NOSEG)   
+PRINT_FIRST_STRING       	0022F     	-1        	NEAR      	(NOSEG)   
+READ_FROM_USER           	00237     	-1        	NEAR      	(NOSEG)   
+CONVERTONEVARIABLE       	00254     	-1        	LABEL     	(NOSEG)   
+CONVERTTWOVARIABLE       	00260     	-1        	LABEL     	(NOSEG)   
+CONVERTTHREEVARIABLE     	0027A     	-1        	LABEL     	(NOSEG)   
+FI                       	002A0     	-1        	LABEL     	(NOSEG)   
+CONVERT_TO_HEX           	002A1     	-1        	NEAR      	(NOSEG)   
+CONVERT_LOOP             	002A6     	-1        	LABEL     	(NOSEG)   
+STORE_HEX                	002B3     	-1        	LABEL     	(NOSEG)   
+REMOVE_LEADING_ZEROS     	002C0     	-1        	LABEL     	(NOSEG)   
+FINISH_CONVERSION        	002D0     	-1        	LABEL     	(NOSEG)   
+PRINTHEXA                	002D1     	-1        	NEAR      	(NOSEG)   
+CONVERTBINARY            	002E0     	-1        	NEAR      	(NOSEG)   
+DOLOOP                   	002EC     	-1        	LABEL     	(NOSEG)   
+PUT1                     	002F7     	-1        	LABEL     	(NOSEG)   
+PUT0                     	002FE     	-1        	LABEL     	(NOSEG)   
+OUTT                     	00305     	-1        	LABEL     	(NOSEG)   
+CONVERTTOROMAN           	00314     	-1        	NEAR      	(NOSEG)   
+LOOPTOFINDCURRVALUE      	0031A     	-1        	LABEL     	(NOSEG)   
+RETERN                   	00336     	-1        	LABEL     	(NOSEG)   
+BY                       	0033C     	-1        	LABEL     	(NOSEG)   
+===================================================================================================
+[ 8/26/2024  --  11:48:34 AM ] 
+< END >
+ 

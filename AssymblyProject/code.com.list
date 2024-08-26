@@ -1,0 +1,269 @@
+EMU8086 GENERATED LISTING. MACHINE CODE <- SOURCE.
+ 
+code.com -- emu8086 assembler version: 4.08  
+ 
+[ 8/26/2024  --  11:48:34 AM ] 
+ 
+===================================================================================================
+[LINE]     LOC: MACHINE CODE                          SOURCE
+===================================================================================================
+ 
+[   1]        :                                       org 100h
+[   2]        :                                       
+[   3]    0100: E9 11 01                              .data
+[   4]    0103: 0A 0D 50 6C 65 61 73 65 20 65 6E 74   first_string db 0ah,0dh, 'Please enter a number between 0 and 999:  $'  ; Prompt to enter a number
+                65 72 20 61 20 6E 75 6D 62 65 72 20 
+                62 65 74 77 65 65 6E 20 30 20 61 6E 
+                64 20 39 39 39 3A 20 20 24          
+[   5]    0130: 04                                    number db 4
+[   6]    0131: 00                                    db ?
+[   7]    0132: 00 00 00                              db 3 dup(?)  ; Stores the user input (number of digits)
+[   8]    0135: 0A 0D 54 48 45 20 56 41 4C 55 45 20   binary db 0ah,0dh, 'THE VALUE IN BINARY FORMAT IS: $'  ; Binary output label
+                49 4E 20 42 49 4E 41 52 59 20 46 4F 
+                52 4D 41 54 20 49 53 3A 20 24       
+[   9]    0157: 0A 0D 54 48 45 20 4E 55 4D 42 45 52   HEXS DB 0ah,0dh, 'THE NUMBER IN HEXADECIMAL FORMAT IS : ','$' ; Hexadecimal output label
+                20 49 4E 20 48 45 58 41 44 45 43 49 
+                4D 41 4C 20 46 4F 52 4D 41 54 20 49 
+                53 3A 20 24                         
+[  10]    017F: 0A 0D 54 48 45 20 4E 55 4D 42 45 52   ROMANS DB 0AH,0DH,'THE NUMBER IN ROMAN SYSTEM IS : $' ; Roman numeral output label
+                20 49 4E 20 52 4F 4D 41 4E 20 53 59 
+                53 54 45 4D 20 49 53 3A 20 24       
+[  11]    01A1: 00                                    digits db 0  ; Store digits of the number
+[  12]    01A2: 20 20 20 20 24                        mytemp db 4 dup(' '), '$'  ; Temporary storage for hexadecimal result
+[  13]    01A7: 30 30 30 30 30 30 30 30 30 30 30 30   binarytemp db 16 dup('0'), '$'  ; Temporary storage for binary result
+                30 30 30 30 24                      
+[  14]    01B8: 43 4D 84 03 44 00 F4 01 43 44 90 01   ROMANVALUES DW 'CM', 900, 'D', 500, 'CD', 400, 'C', 100, 'XC', 90, 'L', 50, 'XL', 40, 'X', 10, 'IX', 9, 'V', 5, 'IV', 4, 'I', 1, 0 ; Roman numeral values and their corresponding numbers
+                43 00 64 00 58 43 5A 00 4C 00 32 00 
+                58 4C 28 00 58 00 0A 00 49 58 09 00 
+                56 00 05 00 49 56 04 00 49 00 01 00 
+                00 00                               
+[  15]    01EA: 00 00 00 00 00 00 00 00 00 00 00 00   ROMANVALUE DW 20 DUP(?), '$'  ; Temporary storage for Roman numeral result
+                00 00 00 00 00 00 00 00 00 00 00 00 
+                00 00 00 00 00 00 00 00 00 00 00 00 
+                00 00 00 00 24 00                   
+[  16]        :                                       
+[  17]    0214:                                       .code
+[  18]    0214: 8C C8                                 mov ax,@data
+[  19]    0216: 8E D8                                 mov ds,ax
+[  20]        :                                       
+[  21]    0218:                                       main proc
+[  22]    0218: E8 14 00                              call Print_First_String  ; Prompt user for input
+[  23]    021B: E8 19 00                              call read_from_user  ; Read and convert user input to CX register
+[  24]    021E: 8B D9                                 mov bx, cx  ; Save CX for reuse
+[  25]    0220: E8 7E 00                              call convert_to_hex  ; Convert the input to hexadecimal
+[  26]    0223: E8 AB 00                              call printHexa  ; Print the hexadecimal result
+[  27]    0226: 8B CB                                 mov cx, bx  ; Restore CX for binary conversion
+[  28]    0228: E8 B5 00                              call convertbinary  ; Convert the input to binary
+[  29]    022B: E8 E6 00                              call CONVERTTOROMAN  ; Convert the input to Roman numeral
+[  30]        :                                       endp main
+[  31]    022E: C3                                    RET
+[  32]        :                                       
+[  33]        :                                       ; Prints the first string (prompt for user input)
+[  34]    022F:                                       Print_First_String proc
+[  35]    022F: BA 03 01                              mov dx,offset first_string
+[  36]    0232: B4 09                                 mov ah,09h
+[  37]    0234: CD 21                                 int 21h
+[  38]    0236: C3                                    ret
+[  39]        :                                       Print_First_String endp
+[  40]        :                                       
+[  41]        :                                       ; Reads user input and converts it to numeric value in CX
+[  42]    0237:                                       read_from_user proc
+[  43]    0237: B4 0A                                 mov ah,0ah
+[  44]    0239: BA 30 01                              mov dx,offset number
+[  45]    023C: CD 21                                 int 21h
+[  46]    023E: 8B F2                                 mov si,dx
+[  47]    0240: 80 7C 01 02                           cmp [si+1], 2
+[  48]    0244: 74 1A                                 je convertTwoVariable
+[  49]    0246: 80 7C 01 03                           cmp [si+1], 3
+[  50]    024A: 74 2E                                 je convertThreeVariable
+[  51]    024C: 80 7C 01 01                           cmp [si+1], 1
+[  52]    0250: 74 02                                 je convertOneVariable
+[  53]    0252: EB 4C                                 jmp fi
+[  54]        :                                       
+[  55]        :                                       ; Convert a single-digit number to its value in CX
+[  56]    0254:                                       convertOneVariable:
+[  57]    0254: 33 C9                                 XOR CX,CX
+[  58]    0256: 8B 4C 02                              mov cx,[si+2]
+[  59]    0259: 83 E9 30                              SUB CX,30H  ; Convert ASCII to digit
+[  60]    025C: 32 ED                                 XOR CH,CH
+[  61]    025E: EB 40                                 JMP FI
+[  62]        :                                       
+[  63]        :                                       ; Convert a two-digit number to its value in CX
+[  64]    0260:                                       convertTwoVariable:
+[  65]    0260: 8B F2                                 mov si,dx
+[  66]    0262: 33 DB                                 xor bx,bx
+[  67]    0264: B0 0A                                 mov al,10
+[  68]    0266: 8A 5C 02                              mov bl,[si+2]
+[  69]    0269: 80 EB 30                              sub bl,30h
+[  70]    026C: F6 E3                                 mul bl  ; Multiply the first digit by 10
+[  71]    026E: 8B C8                                 mov cx,ax
+[  72]    0270: 8A 5C 03                              mov bl,[si+3]
+[  73]    0273: 80 EB 30                              sub bl,30h
+[  74]    0276: 03 CB                                 add cx,bx  ; Add the second digit
+[  75]    0278: EB 26                                 jmp fi
+[  76]        :                                       
+[  77]        :                                       ; Convert a three-digit number to its value in CX
+[  78]    027A:                                       convertThreeVariable:
+[  79]    027A: 8B F2                                 mov si,dx             ; Load the address of the input buffer into SI.
+[  80]    027C: 33 DB                                 xor bx,bx             ; Clear BX register for calculation.
+[  81]        :                                       
+[  82]    027E: 8A 5C 02                              mov bl,[si+2]         ; Load the first digit (hundreds place) into BL.
+[  83]    0281: 80 EB 30                              sub bl,30h            ; Convert the ASCII digit to a numeric value.
+[  84]        :                                       
+[  85]    0284: B0 0A                                 mov al,10             ; Load 10 into AL for multiplying.
+[  86]    0286: F6 E3                                 mul bl                ; Multiply the first digit by 10 to shift it.
+[  87]        :                                       
+[  88]    0288: 8B C8                                 mov cx,ax             ; Move the tens-hundreds value to CX.
+[  89]        :                                       
+[  90]    028A: B0 0A                                 mov al,10             ; Load 10 into AL again for further multiplication.
+[  91]    028C: 8A 5C 03                              mov bl,[si+3]         ; Load the second digit (tens place) into BL.
+[  92]    028F: 80 EB 30                              sub bl,30h            ; Convert the ASCII digit to a numeric value.
+[  93]        :                                       
+[  94]    0292: 03 CB                                 add cx,bx             ; Add the tens place value to CX.
+[  95]        :                                       
+[  96]    0294: F6 E1                                 mul cl                ; Multiply the result by 10 to move it into its final place.
+[  97]        :                                       
+[  98]    0296: 8B C8                                 mov cx,ax             ; Store the value in CX.
+[  99]        :                                       
+[ 100]    0298: 8A 5C 04                              mov bl,[si+4]         ; Load the third digit (units place) into BL.
+[ 101]    029B: 80 EB 30                              sub bl,30h            ; Convert it to a numeric value.
+[ 102]        :                                       
+[ 103]    029E: 03 CB                                 add cx,bx             ; Add the final value to CX.
+[ 104]    02A0:                                       fi:
+[ 105]    02A0: C3                                    RET
+[ 106]        :                                       read_from_user endp
+[ 107]        :                                       
+[ 108]        :                                       ; Converts the value in CX to hexadecimal and stores it in 'mytemp'
+[ 109]    02A1:                                       convert_to_hex proc
+[ 110]    02A1: BF A5 01                              mov di, offset mytemp + 3
+[ 111]    02A4: 32 C0                                 xor al,al
+[ 112]        :                                       
+[ 113]    02A6:                                       convert_loop:
+[ 114]    02A6: 8B C1                                 mov ax, cx  ; Copy CX to AX
+[ 115]    02A8: 25 0F 00                              and ax, 0Fh  ; Isolate the lower 4 bits
+[ 116]    02AB: 04 30                                 add al, 30h  ; Convert to ASCII
+[ 117]    02AD: 3C 39                                 cmp al, 39h
+[ 118]    02AF: 76 02                                 jbe store_hex  ; If it's a digit, store it
+[ 119]    02B1: 04 07                                 add al, 7  ; Otherwise, adjust for hex letters
+[ 120]        :                                       
+[ 121]    02B3:                                       store_hex:
+[ 122]    02B3: 88 05                                 mov [di], al  ; Store the digit/letter
+[ 123]    02B5: 4F                                    dec di  ; Move pointer left
+[ 124]    02B6: D1 E9 D1 E9 D1 E9 D1 E9               shr cx, 4  ; Shift the input right by 4 bits (next hex digit)
+[ 125]    02BE: 75 E6                                 jnz convert_loop  ; Repeat until CX is 0
+[ 126]        :                                       
+[ 127]        :                                       ; Remove leading zeros from 'mytemp'
+[ 128]    02C0:                                       remove_leading_zeros:
+[ 129]    02C0: 80 3D 30                              cmp byte ptr [di], '0'
+[ 130]    02C3: 75 0B                                 jne finish_conversion
+[ 131]    02C5: B0 20                                 mov al, ' '
+[ 132]    02C7: 88 05                                 mov [di], al
+[ 133]    02C9: 47                                    inc di
+[ 134]    02CA: 81 FF A5 01                           cmp di, offset mytemp + 3
+[ 135]    02CE: 7E F0                                 jle remove_leading_zeros
+[ 136]        :                                       
+[ 137]    02D0:                                       finish_conversion:
+[ 138]    02D0: C3                                    ret
+[ 139]        :                                       convert_to_hex endp
+[ 140]        :                                       
+[ 141]        :                                       ; Prints the hexadecimal result
+[ 142]    02D1:                                       printHexa proc
+[ 143]    02D1: BA 57 01                              mov dx, OFFSET HEXS
+[ 144]    02D4: B4 09                                 mov ah, 09h
+[ 145]    02D6: CD 21                                 int 21h
+[ 146]        :                                       
+[ 147]    02D8: BA A2 01                              mov dx, offset mytemp
+[ 148]    02DB: B4 09                                 mov ah, 09h
+[ 149]    02DD: CD 21                                 int 21h
+[ 150]        :                                       
+[ 151]    02DF: C3                                    ret
+[ 152]        :                                       printHexa endp
+[ 153]        :                                       
+[ 154]        :                                       ; Converts the value in CX to binary and stores it in 'binarytemp'
+[ 155]    02E0:                                       convertbinary proc
+[ 156]    02E0: 33 F6                                 xor si,si
+[ 157]    02E2: 33 C0                                 xor ax,ax
+[ 158]    02E4: BE A7 01                              mov si,offset binarytemp
+[ 159]    02E7: BE B6 01                              mov si,offset binarytemp + 15
+[ 160]    02EA: 8B D9                                 mov bx,cx
+[ 161]        :                                       
+[ 162]    02EC:                                       doLoop:
+[ 163]    02EC: 83 F9 00                              cmp cx ,0
+[ 164]    02EF: 74 14                                 je outt
+[ 165]        :                                       
+[ 166]    02F1: D1 E9                                 shr cx,1  ; Shift right to get the next bit
+[ 167]    02F3: 72 02                                 jc put1  ; If the bit is 1, store '1'
+[ 168]    02F5: EB 07                                 jmp put0  ; Otherwise, store '0'
+[ 169]        :                                       
+[ 170]    02F7:                                       put1:
+[ 171]    02F7: B0 31                                 mov al,'1'
+[ 172]    02F9: 88 04                                 mov [si],al
+[ 173]    02FB: 4E                                    dec si
+[ 174]    02FC: EB EE                                 jmp doLoop
+[ 175]        :                                       
+[ 176]    02FE:                                       put0:
+[ 177]    02FE: B0 30                                 mov al,'0'
+[ 178]    0300: 88 04                                 mov [si],al
+[ 179]    0302: 4E                                    dec si
+[ 180]    0303: EB E7                                 jmp doLoop
+[ 181]        :                                       
+[ 182]    0305:                                       outt:
+[ 183]    0305: BA 35 01                              mov dx, OFFSET binary
+[ 184]    0308: B4 09                                 mov ah, 09h
+[ 185]    030A: CD 21                                 int 21h
+[ 186]        :                                       
+[ 187]    030C: BA A7 01                              mov dx, offset binarytemp
+[ 188]    030F: B4 09                                 mov ah, 09h
+[ 189]    0311: CD 21                                 int 21h
+[ 190]    0313: C3                                    ret
+[ 191]        :                                       convertbinary endp
+[ 192]        :                                       
+[ 193]        :                                       ; Converts the value in BX to Roman numeral and stores it in 'ROMANVALUE'
+[ 194]    0314:                                       CONVERTTOROMAN PROC
+[ 195]    0314: BE B8 01                              mov si,offset ROMANVALUES
+[ 196]    0317: BF EA 01                              mov di, offset ROMANVALUE
+[ 197]        :                                       
+[ 198]    031A:                                       LOOPTOFINDCURRVALUE:
+[ 199]    031A: 83 FB 00                              cmp bx,0
+[ 200]    031D: 74 1D                                 je BY  ; Exit if BX is 0
+[ 201]    031F: 8A 54 02                              mov dl,[si+2]
+[ 202]    0322: 8A 74 03                              mov dh,[si+3]
+[ 203]    0325: 3B DA                                 cmp bx,dx  ; Compare BX with the Roman value
+[ 204]    0327: 7C 0D                                 jl RETERN  ; Skip if BX is smaller
+[ 205]    0329: 2B DA                                 sub bx,dx  ; Subtract the value
+[ 206]    032B: 8A 0C                                 mov cl,[si]
+[ 207]    032D: 8A 6C 01                              mov ch,[si+1]
+[ 208]    0330: 89 0D                                 mov [di],cx  ; Store the Roman numeral
+[ 209]    0332: 47                                    inc di
+[ 210]    0333: 47                                    inc di
+[ 211]    0334: EB E4                                 jmp LOOPTOFINDCURRVALUE  ; Repeat
+[ 212]        :                                       
+[ 213]    0336:                                       RETERN:
+[ 214]    0336: 46                                    inc si
+[ 215]    0337: 46                                    inc si
+[ 216]    0338: 46                                    inc si
+[ 217]    0339: 46                                    inc si
+[ 218]    033A: EB DE                                 jmp LOOPTOFINDCURRVALUE
+[ 219]        :                                       
+[ 220]    033C:                                       BY:
+[ 221]    033C: BA 7F 01                              mov dx,OFFSET ROMANS
+[ 222]    033F: B4 09                                 mov ah,9
+[ 223]    0341: CD 21                                 int 21h
+[ 224]        :                                       
+[ 225]    0343: BA EA 01                              mov dx,OFFSET ROMANVALUE
+[ 226]    0346: B4 09                                 mov ah,9
+[ 227]    0348: CD 21                                 int 21h
+[ 228]    034A: C3                                    ret
+[ 229]        :                                       CONVERTTOROMAN ENDP
+[ 230]        :                                       
+[ 231]        :                                       end main
+[ 232]        :                                       
+[ 233]        :                                       
+ 
+===================================================================================================
+ 
+
+
+
+
+===================================================================================================
